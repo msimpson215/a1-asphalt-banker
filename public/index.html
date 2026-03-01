@@ -11,15 +11,17 @@
             align-items: center;
             justify-content: space-around;
             height: 100vh;
-            /* Asphalt Depth: Lighter center fading to true black edges */
             background: radial-gradient(circle, #252525 0%, #000000 100%); 
-            color: #ffcc00; /* Traffic Yellow */
-            font-family: 'Impact', 'Arial Narrow Bold', sans-serif; /* FONT IS HERE */
+            color: #ffcc00; 
+            /* THIN FONT - NO BOLD */
+            font-family: 'Arial Narrow', sans-serif; 
+            font-weight: 300; 
             overflow: hidden;
         }
 
         #status-text {
-            font-size: 2.2rem; /* SIZE IS HERE - Make smaller if needed */
+            font-size: 2.2rem;
+            font-weight: 300; /* STRIPPED BOLD */
             text-transform: uppercase;
             letter-spacing: 2px;
         }
@@ -48,7 +50,8 @@
         }
 
         #footer-brand {
-            font-size: 1.2rem; /* FOOTER SIZE IS HERE */
+            font-size: 1.2rem;
+            font-weight: 300; /* STRIPPED BOLD */
             text-transform: uppercase;
         }
     </style>
@@ -61,7 +64,7 @@
     <div id="footer-brand">A1 Professional Asphalt LLC</div>
 
     <script>
-        let isStarted = false; // STOPS THE ECHO
+        let isStarted = false; 
 
         async function startAssistant() {
             if (isStarted) return; 
