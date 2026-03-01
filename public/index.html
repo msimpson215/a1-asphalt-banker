@@ -13,76 +13,61 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background: radial-gradient(circle, #2c2c2c 0%, #1a1a1a 100%);
+            /* Deep, sharp asphalt background */
+            background: #1a1a1a; 
             color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
         }
 
         #status-text {
-            margin-bottom: 40px;
+            margin-bottom: 50px;
             font-size: 1.2rem;
-            letter-spacing: 2px;
-            font-weight: 300;
-            color: #ffcc00; 
+            letter-spacing: 3px;
+            font-weight: 400;
+            color: #ffcc00; /* Traffic Yellow */
             text-transform: uppercase;
         }
 
         #orb-container {
             position: relative;
-            width: 250px;
-            height: 250px;
+            width: 240px;
+            height: 240px;
             cursor: pointer;
         }
 
+        /* The Clean-Cut Sun - Sharp and Pro */
         .orb {
             position: absolute;
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background: radial-gradient(circle, #ffcc00 0%, #e6b800 70%);
-            box-shadow: 0 0 60px rgba(255, 204, 0, 0.5);
-            z-index: 2;
-        }
-
-        .orb-glow {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 50%;
             background: #ffcc00;
-            filter: blur(45px);
-            opacity: 0.3;
-            transition: opacity 0.5s ease;
+            /* Natural glow effect without the dizzy halo */
+            box-shadow: 0 0 40px rgba(255, 204, 0, 0.6);
+            z-index: 2;
+            transition: transform 0.2s ease;
         }
 
-        /* Pulsing only when AI is talking */
-        body.speaking .orb-glow {
-            opacity: 0.8;
-            animation: breathe 2.5s infinite ease-in-out;
+        /* Subtle breathing only when AI speaks */
+        body.speaking .orb {
+            animation: sun-breathe 2s infinite ease-in-out;
         }
 
-        body.listening .orb-glow {
-            opacity: 0.6;
-            animation: none;
-        }
-
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.18); }
+        @keyframes sun-breathe {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(255, 204, 0, 0.6); }
+            50% { transform: scale(1.08); box-shadow: 0 0 70px rgba(255, 204, 0, 0.9); }
         }
 
         #branding-footer {
             position: absolute;
-            bottom: 30px; 
+            bottom: 35px; 
             width: 100%;
-            font-size: 0.95rem;
-            color: rgba(255, 204, 0, 0.6);
+            font-size: 1rem;
+            color: #ffcc00;
+            opacity: 0.8;
             text-align: center;
-            letter-spacing: 1.5px;
-            font-weight: 400;
+            letter-spacing: 2px;
         }
     </style>
 </head>
@@ -92,55 +77,76 @@
 
     <div id="orb-container" onclick="startConnection()">
         <div class="orb"></div>
-        <div class="orb-glow"></div>
     </div>
 
     <div id="branding-footer">A1 PROFESSIONAL ASPHALT & SEALING LLC</div>
 
     <script>
-        // --- 12-Hour Timer Logic for Joe ---
-        function getJoeGreeting() {
-            const now = new Date().getTime();
-            const twelveHours = 12 * 60 * 60 * 1000; 
-            const lastSeen = localStorage.getItem('voxTalk_lastSeen');
-            localStorage.setItem('voxTalk_lastSeen', now);
+        let pc; // PeerConnection
+        let dc; // DataChannel
 
-            if (lastSeen && (now - lastSeen < twelveHours)) {
-                return "Welcome back, Joe. Ready to pick up where we left off?";
+        async function startConnection() {
+            try {
+                // 1. Trigger Microphone
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                setMode('listening');
+                console.log("Microphone access granted. Connecting...");
+
+                // 2. Get the session token from your server
+                const response = await fetch("/session");
+                const data = await response.json();
+                const EPHEMERAL_KEY = data.client_secret.value;
+
+                // 3. Setup WebRTC
+                pc = new RTCPeerConnection();
+                const audioEl = document.createElement("audio");
+                audioEl.autoplay = true;
+                pc.ontrack = e => audioEl.srcObject = e.streams[0];
+                pc.addTrack(stream.getTracks()[0]);
+
+                // 4. Data Channel for syncing the "Sun" movement
+                dc = pc.createDataChannel("oai-events");
+                dc.addEventListener("message", (e) => {
+                    const event = JSON.parse(e.data);
+                    // Breathe when audio is coming in
+                    if (event.type === "response.audio.delta") setMode('speaking');
+                    if (event.type === "response.audio.done") setMode('listening');
+                });
+
+                // 5. Connect to OpenAI
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                const sdpResponse = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17`, {
+                    method: "POST",
+                    body: offer.sdp,
+                    headers: {
+                        Authorization: `Bearer ${EPHEMERAL_KEY}`,
+                        "Content-Type": "application/sdp",
+                    },
+                });
+
+                const answer = { type: "answer", sdp: await sdpResponse.text() };
+                await pc.setRemoteDescription(answer);
+
+            } catch (err) {
+                console.error("Connection failed:", err);
+                document.getElementById('status-text').textContent = "CHECK SERVER/API KEY";
             }
-            return "Hello Joe, how can I help you today?";
         }
 
         function setMode(mode) {
             document.body.className = mode; 
             const statusLabel = document.getElementById('status-text');
             if (mode === 'listening') statusLabel.textContent = "I'M LISTENING...";
-            else if (mode === 'speaking') statusLabel.textContent = "AI TEAM MEMBER SPEAKING";
+            else if (mode === 'speaking') statusLabel.textContent = "TEAM MEMBER SPEAKING";
             else statusLabel.textContent = "TALK TO OUR AI TEAM MEMBER";
         }
 
-        // --- Forced Microphone Permission & Connection ---
-        async function startConnection() {
-            try {
-                // This line forces the browser to ask for the mic right now
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                setMode('listening');
-                
-                console.log("Microphone access granted. Initializing VoxTalk...");
-                
-                // Once the mic is hot, we run your existing connection logic
-                // initRealtime(stream); 
-                
-            } catch (err) {
-                console.error("Microphone denied or error:", err);
-                document.getElementById('status-text').textContent = "MIC ACCESS REQUIRED";
-            }
-        }
-
         window.onload = () => {
-            // Pre-calculate the greeting so it's ready for the voice stream
-            const greeting = getJoeGreeting();
-            console.log("Ready for Joe. Current Session Greeting: " + greeting);
+            const now = new Date().getTime();
+            localStorage.setItem('voxTalk_lastSeen', now);
+            console.log("Ready for Joe.");
         };
     </script>
 </body>
