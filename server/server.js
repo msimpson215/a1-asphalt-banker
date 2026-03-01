@@ -1,59 +1,33 @@
-import express from "express";
-
+const express = require('express');
+const fetch = require('node-fetch');
 const app = express();
-app.use(express.static("public"));
+const path = require('path');
 
-app.post("/session", async (req, res) => {
+app.use(express.static('public'));
+
+// The secret handshake route
+app.get('/session', async (req, res) => {
   try {
-    const r = await fetch("https://api.openai.com/v1/realtime/sessions", {
+    const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-realtime-preview",
+        model: "gpt-4o-realtime-preview-2024-12-17",
         voice: "alloy",
-        instructions: `
-          You are the AI Team Member for A1 Professional Asphalt & Sealing, LLC. 
-          Your goal is to act as a professional "silent salesman" and expert.
-
-          BUSINESS DETAILS:
-          - Owners: Joe Schanz and Ben Essenpreis.
-          - We serve the Midwest: MO, IL, AR, IA, IN, KY, TN.
-          - We specialize in Asphalt Paving, SealMaster Sealcoating, Milling, and Overlays.
-          - We do Crack Filling, Pothole Repair, Lot Striping, and Concrete repairs.
-
-          SALES TACTICS:
-          - ALWAYS offer free estimates.
-          - If they want a quote, tell them to call 888-223-3797 or 1-800-ASPHALT.
-          - If they ask about video estimates, say: "We are building an AI Asphalt Estimator where you can upload a 5-minute video of your lot for Joe to review!"
-
-          CONSTRAINTS:
-          - Be professional and friendly.
-          - Keep answers concise. 
-          - Focus ONLY on asphalt and paving services.
-          - ALWAYS respond in English.
-        `
-      })
+        instructions: "You are a professional team member for A1 Professional Asphalt & Sealing LLC. You are talking to Joe. Be concise and professional. Focus only on asphalt paving, sealing, and striping. If Joe asks for an estimate, tell him you can help gather project details.",
+        input_audio_transcription: { model: "whisper-1" }
+      }),
     });
-
-    const data = await r.json();
-
-    const session = {
-      client_secret: data.client_secret,
-      model: "gpt-4o-realtime-preview",
-      voice: "alloy",
-      expires_at: Date.now() + 10 * 60 * 1000 
-    };
-
-    res.json(session);
-
-  } catch (e) {
-    console.error("Session error:", e);
-    res.status(500).json({ error: "session failed" });
+    const data = await response.json();
+    res.send(data);
+  } catch (error) {
+    console.error("Session Error:", error);
+    res.status(500).send({ error: "Could not create session" });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server running on " + PORT));
+app.listen(PORT, () => console.log(`A1 Asphalt Server running on port ${PORT}`));
