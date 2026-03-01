@@ -9,26 +9,35 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             height: 100vh;
+            padding: 60px 20px;
             background-color: #1a1a1a; /* Solid Asphalt Black */
-            color: #ffcc00; /* Pure Traffic Yellow */
-            /* THE EXACT FONT FROM YOUR SCREENSHOT */
+            color: #ffcc00; /* Traffic Yellow */
+            /* FORCING THE EXACT HEAVY IMPACT FONT */
             font-family: 'Impact', 'Arial Narrow Bold', sans-serif;
             overflow: hidden;
+            box-sizing: border-box;
+            text-align: center;
         }
 
         #status-text {
-            margin-bottom: 40px;
-            font-size: 3.5rem; /* Massive, Bold Impact */
-            letter-spacing: 2px;
+            font-size: 4.5rem; /* Massive, Heavy Weight */
+            letter-spacing: 1px;
             text-transform: uppercase;
+            line-height: 1.1;
+            margin: 0;
+            flex-shrink: 0;
         }
 
         #orb-container {
-            width: 300px;
-            height: 300px;
+            width: 260px; /* Precise scaling to prevent overlap */
+            height: 260px;
             cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .orb {
@@ -36,7 +45,6 @@
             height: 100%;
             border-radius: 50%;
             background-color: #ffcc00; 
-            /* THE HIGH INTENSITY GLOW */
             box-shadow: 0 0 80px rgba(255, 204, 0, 1);
         }
 
@@ -45,16 +53,16 @@
         }
 
         @keyframes pulse {
-            from { transform: scale(1); box-shadow: 0 0 80px rgba(255, 204, 0, 1); }
-            to { transform: scale(1.15); box-shadow: 0 0 130px rgba(255, 204, 0, 1); }
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
         }
 
         #footer-brand {
-            position: absolute;
-            bottom: 40px;
-            font-size: 1.8rem; /* Heavy Bold weight at the bottom */
+            font-size: 2.5rem; /* Heavy Bold weight */
             letter-spacing: 1px;
             text-transform: uppercase;
+            margin: 0;
+            flex-shrink: 0;
         }
     </style>
 </head>
