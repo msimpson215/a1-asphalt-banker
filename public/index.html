@@ -1,94 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>A1 Brain</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>A1 Brain</title>
 
-<style>
-body {
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
-    height: 100vh;
-    background: radial-gradient(circle, #252525 0%, #000000 100%);
-    color: #FED100;
-    font-family: 'Arial Narrow', sans-serif;
-    font-weight: 300;
-    overflow: hidden;
-}
-
-#status-text {
-    font-size: 2.2rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-
-#orb-container {
-    width: 220px;
-    height: 220px;
-    cursor: pointer;
-}
-
-.orb {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background-color: #FED100;
-    box-shadow: 0 0 60px rgba(254, 209, 0, 0.8);
-}
-
-body.active .orb {
-    animation: pulse 1.2s infinite alternate ease-in-out;
-}
-
-@keyframes pulse {
-    from { transform: scale(1); }
-    to { transform: scale(1.05); }
-}
-
-#footer-brand {
-    font-size: 1.2rem;
-    text-transform: uppercase;
-}
-</style>
-</head>
-
-<body>
-
-<div id="status-text">TALK TO OUR AI TEAM MEMBER</div>
-
-<div id="orb-container" onclick="toggleAssistant()">
-    <div class="orb"></div>
-</div>
-
-<div id="footer-brand">A1 Professional Asphalt LLC</div>
-
-<script>
-let pc = null;
-let localStream = null;
-
-async function toggleAssistant() {
-
-    if (pc) {
-        pc.close();
-        pc = null;
-
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-        }
-
-        document.body.className = 'idle';
-        document.getElementById('status-text').textContent = "TALK TO OUR AI TEAM MEMBER";
-        return;
+  <style>
+    :root{
+      --bg1:#252525;
+      --bg2:#000000;
+      --yellow:#FED100;
+      --muted: rgba(254,209,0,0.70);
+      --muted2: rgba(254,209,0,0.45);
     }
 
-    document.body.className = 'active';
-    document.getElementById('status-text').textContent = "LISTENING...";
+    body {
+      margin: 0;
+      height: 100vh;
+      background: radial-gradient(circle, var(--bg1) 0%, var(--bg2) 100%);
+      color: var(--yellow);
+      font-family: "Arial Narrow", Arial, sans-serif;
+      font-weight: 300;
+      overflow: hidden;
+      user-select: none;
+    }
 
-    try {
+    /* Click-outside overlay */
+    #overlay{
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
 
+    /* Small focused "box" so you can click outside it */
+    #panel{
+      width: min(420px, calc(100vw - 44px));
+      border-radius: 18px;
+      padding: 18px 18px 14px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(254,209,0,0.22);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Make the copy SMALL. The orb is the focus. */
+    #headline {
+      font-size: 1.0rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 1.2;
+      color: var(--muted);
+    }
+
+    #status-text{
+      font-size: 1.05rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 1.2;
+      color: var(--yellow);
+      opacity: 0.95;
+      min-height: 1.3em;
+    }
+
+    #hint{
+      font-size: 0.85rem;
+      color: var(--muted2);
+      text-align: center;
+      line-height: 1.2;
+      margin-top: -4px;
+    }
+
+    #orb-container {
+      width: 220px;
+      height: 220px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .orb {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background-color: var(--yellow);
+      box-shadow: 0 0 60px rgba(254, 209, 0, 0.8);
+      transform: scale(1);
+      transition: transform 260ms ease, box-shadow 260ms ease, filter 260ms ease;
+      will-change: transform, box-shadow;
+    }
+
+    /* Calm hover */
+    #orb-container:hover .orb{
+      transform: scale(1.03);
+      box-shadow: 0 0 78px rgba(254,209,0,0.9);
+    }
+
+    /* “Wake up” + pulse (Star Trek vibe) */
+    body.active .orb {
+      transform: scale(1.14);
+      box-shadow: 0 0 105px rgba(254, 209, 0, 1);
+      animation: pulse 1.35s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%   { transform: scale(1.10); box-shadow: 0 0 70px rgba(254,209,0,0.75); }
+      100% { transform: scale(1.17); box-shadow: 0 0 118px rgba(254,209,0,1); }
+    }
+
+    #footer-brand {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.55;
+      text-align: center;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+
+<body class="idle">
+  <div id="overlay">
+    <div id="panel">
+      <div id="headline">Start a conversation with our AI team member</div>
+
+      <div id="orb-container" onclick="toggleAssistant()">
+        <div class="orb"></div>
+      </div>
+
+      <!-- Keep LISTENING SMALL -->
+      <div id="status-text">PRESS TO START</div>
+
+      <div id="hint">Click outside this box to go back</div>
+
+      <div id="footer-brand">A1 Professional Asphalt &amp; Concrete</div>
+    </div>
+  </div>
+
+  <script>
+    let pc = null;
+    let localStream = null;
+
+    // Click outside panel to "go back"
+    document.getElementById("overlay").addEventListener("click", (e) => {
+      if (e.target.id !== "overlay") return;
+
+      // Stop if running
+      if (pc) {
+        try { pc.close(); } catch {}
+        pc = null;
+      }
+      if (localStream) {
+        try { localStream.getTracks().forEach(t => t.stop()); } catch {}
+        localStream = null;
+      }
+      document.body.className = "idle";
+      document.getElementById("status-text").textContent = "PRESS TO START";
+
+      // If embedded in a Webflow modal/iframe, try notifying parent to close.
+      try { window.parent.postMessage({ type: "voxtalk-close" }, "*"); } catch {}
+
+      // If standalone tab/window, try to close or go back.
+      try { window.close(); } catch {}
+      try { history.back(); } catch {}
+    });
+
+    async function toggleAssistant() {
+      // Stop / pause
+      if (pc) {
+        pc.close();
+        pc = null;
+        if (localStream) {
+          localStream.getTracks().forEach(track => track.stop());
+        }
+        localStream = null;
+
+        document.body.className = 'idle';
+        document.getElementById('status-text').textContent = "PRESS TO START";
+        return;
+      }
+
+      document.body.className = 'active';
+      document.getElementById('status-text').textContent = "LISTENING…";
+
+      try {
         const r = await fetch('/session');
         const data = await r.json();
 
@@ -98,44 +200,43 @@ async function toggleAssistant() {
         audio.autoplay = true;
 
         pc.ontrack = e => {
-            if (audio.srcObject !== e.streams[0]) {
-                audio.srcObject = e.streams[0];
-            }
+          if (audio.srcObject !== e.streams[0]) {
+            audio.srcObject = e.streams[0];
+          }
         };
 
         localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
         pc.addTrack(localStream.getTracks()[0]);
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
         const sdpResponse = await fetch(
-            "https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
-            {
-                method: "POST",
-                body: offer.sdp,
-                headers: {
-                    Authorization: `Bearer ${data.client_secret.value}`,
-                    "Content-Type": "application/sdp"
-                }
+          "https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
+          {
+            method: "POST",
+            body: offer.sdp,
+            headers: {
+              Authorization: `Bearer ${data.client_secret.value}`,
+              "Content-Type": "application/sdp"
             }
+          }
         );
 
-        const answer = {
-            type: "answer",
-            sdp: await sdpResponse.text()
-        };
-
+        const answer = { type: "answer", sdp: await sdpResponse.text() };
         await pc.setRemoteDescription(answer);
 
-    } catch (err) {
-        console.error(err);
+      } catch (err) {
         pc = null;
+        if (localStream) {
+          try { localStream.getTracks().forEach(t => t.stop()); } catch {}
+          localStream = null;
+        }
+        document.body.className = 'idle';
         document.getElementById('status-text').textContent = "ERROR";
+        console.error(err);
+      }
     }
-}
-</script>
-
+  </script>
 </body>
 </html>
