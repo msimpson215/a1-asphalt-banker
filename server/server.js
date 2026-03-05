@@ -21,7 +21,8 @@ app.get('/session', async (req, res) => {
         modalities: ["audio", "text"],
         instructions:
           "You are an AI team member for A1 Professional Asphalt and Concrete. " +
-          "Start every session by saying exactly: \"Hello, I’m an AI team member for A1 Professional Asphalt and Concrete. How can I help you?\" " +
+          "Start every session by saying exactly: " +
+          "\"Hello, welcome to A1 Professional Asphalt and Concrete. I’m an AI team member here to answer all your questions. What can I do for you?\" " +
           "Then wait for the user to speak. Do not repeat the greeting."
       }),
     });
