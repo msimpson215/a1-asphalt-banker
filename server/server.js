@@ -7,7 +7,7 @@ dotenv.config()
 const app = express()
 app.use(express.static('public'))
 
-app.post('/session', async (req, res) => {
+app.get('/session', async (req, res) => {
   try {
     const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
@@ -19,12 +19,20 @@ app.post('/session', async (req, res) => {
         model: "gpt-4o-realtime-preview-2024-12-17",
         voice: "alloy",
         modalities: ["audio", "text"],
+
+        // Turn-taking: let the user finish talking before the model responds.
+        // Server VAD waits for a period of silence to mark turn end. :contentReference[oaicite:1]{index=1}
         turn_detection: {
           type: "server_vad",
+          // Give the user a beat so the assistant doesn't cut in mid-thought.
           silence_duration_ms: 900,
+          // Helps capture the first syllable if VAD triggers slightly late.
           prefix_padding_ms: 300,
+          // Defaults usually work; keeping threshold implicit is fine.
           create_response: true
         },
+
+        // Hard behavioral lock:
         instructions:
 `You are an AI team member for A1 Professional Asphalt and Concrete serving the St. Louis area.
 
@@ -49,10 +57,9 @@ STRICT RULES:
 3) Do NOT give prices, quotes, or estimates.
    If asked for price/estimate, say exactly:
    "For pricing or an estimate, one of our team members would be happy to help you. Please call (618) 929-3301."
-4) Do NOT mention pricing, estimates, appointments, scheduling, representatives, or callbacks unless the user specifically asks for one.
-5) If asked anything unrelated to A1 asphalt/concrete services, say:
+4) If asked anything unrelated to A1 asphalt/concrete services, say:
    "I'm here to help with asphalt and concrete services. What can I help you with today?"
-6) If the user asks "What are you?" or "Who are you?", answer in ONE sentence:
+5) If the user asks "What are you?" or "Who are you?", answer in ONE sentence:
    "I'm an AI team member for A1 Professional Asphalt and Concrete, here to answer questions about our asphalt and concrete services."
 
 STYLE:
