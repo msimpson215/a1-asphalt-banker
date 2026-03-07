@@ -1,275 +1,271 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>A1 Brain</title>
-
+  <meta charset="utf-8" />
+  <title>VoxTalk A1 Asphalt</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:,">
   <style>
-    :root{
-      --bg1:#252525;
-      --bg2:#000000;
-      --yellow:#FED100;
-      --muted: rgba(254,209,0,0.70);
-      --muted2: rgba(254,209,0,0.45);
-      --stroke: rgba(254,209,0,0.22);
-      --panel: rgba(0,0,0,0.25);
-    }
-
     body {
       margin: 0;
-      height: 100vh;
-      background: radial-gradient(circle, var(--bg1) 0%, var(--bg2) 100%);
-      color: var(--yellow);
-      font-family: "Arial Narrow", Arial, sans-serif;
-      font-weight: 300;
-      overflow: hidden;
-      user-select: none;
-    }
-
-    #overlay{
-      position: fixed;
-      inset: 0;
+      font-family: system-ui, sans-serif;
       display: grid;
       place-items: center;
-      padding: 22px;
+      min-height: 100vh;
+      background: radial-gradient(circle at 50% 20%, #dbeafe, #93c5fd 40%, #1e3a8a 90%);
     }
 
-    #panel{
-      width: min(460px, calc(100vw - 44px));
-      border-radius: 18px;
-      padding: 18px 18px 14px;
-      background: var(--panel);
-      border: 1px solid var(--stroke);
-      backdrop-filter: blur(6px);
-      box-shadow: 0 18px 50px rgba(0,0,0,0.55);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-
-      /* IMPORTANT: reserve space so nothing shifts */
-      gap: 10px;
-    }
-
-    /* Reserve space even when "hidden" to prevent layout jump */
-    #headline {
-      font-size: 0.98rem;
-      letter-spacing: 1px;
-      text-transform: uppercase;
+    .app {
       text-align: center;
-      line-height: 1.2;
-      color: var(--muted);
-      padding: 0 6px;
-      min-height: 2.4em; /* reserve 2 lines */
-      display: grid;
-      place-items: center;
-    }
-    .hide-soft { visibility: hidden; }
-
-    #orb-container {
-      width: 185px;   /* slightly smaller */
-      height: 185px;
-      cursor: pointer;
-      display: grid;
-      place-items: center;
+      max-width: 600px;
+      width: min(92vw, 600px);
     }
 
-    .orb {
-      width: 100%;
-      height: 100%;
+    .demo-label {
+      font-size: 12px;
+      color: #111;
+      margin-bottom: 4px;
+    }
+
+    h1 {
+      margin: 6px 0 16px;
+      font-size: 22px;
+      color: #111;
+    }
+
+    #pttBtn {
+      width: 120px;
+      height: 120px;
       border-radius: 50%;
-      background-color: var(--yellow);
-      box-shadow: 0 0 58px rgba(254, 209, 0, 0.78);
-      transform: scale(1);
-      transition: transform 260ms ease, box-shadow 260ms ease;
+      border: none;
+      cursor: pointer;
+      background: radial-gradient(circle at 30% 30%, #3b82f6, #1e40af);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3);
+      transition: transform 0.15s ease, box-shadow 0.3s ease;
+      position: relative;
     }
 
-    #orb-container:hover .orb{
-      transform: scale(1.03);
-      box-shadow: 0 0 75px rgba(254,209,0,0.9);
+    #pttBtn:hover { transform: scale(1.02); }
+    #pttBtn:active { transform: scale(0.95); }
+
+    #pttBtn.listening {
+      animation: listenPulse 1.6s ease-in-out infinite;
     }
 
-    body.active .orb {
-      transform: scale(1.12);
-      box-shadow: 0 0 100px rgba(254, 209, 0, 1);
-      animation: pulse 1.35s infinite alternate ease-in-out;
+    @keyframes listenPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(59,130,246,.7); }
+      50%  { box-shadow: 0 0 0 20px rgba(59,130,246,0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
     }
 
-    @keyframes pulse {
-      0%   { transform: scale(1.08); box-shadow: 0 0 68px rgba(254,209,0,0.75); }
-      100% { transform: scale(1.15); box-shadow: 0 0 112px rgba(254,209,0,1); }
+    #pttBtn.speaking::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, #60a5fa, #2563eb, #1e40af, #60a5fa);
+      animation: swirl 2s linear infinite;
+      -webkit-mask: radial-gradient(circle, rgba(0,0,0,0) 65%, rgba(0,0,0,1) 66%);
+      mask: radial-gradient(circle, rgba(0,0,0,0) 65%, rgba(0,0,0,1) 66%);
     }
 
-    #status-text{
-      font-size: 0.86rem;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      text-align: center;
-      line-height: 1.2;
-      color: var(--yellow);
-      opacity: 0.90;
-      min-height: 1.2em; /* reserve 1 line always */
+    @keyframes swirl {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
     }
 
-    #hint{
-      font-size: 0.82rem;
-      color: var(--muted2);
-      text-align: center;
-      line-height: 1.2;
-      min-height: 1.1em; /* reserve 1 line always */
-      margin-top: -2px;
+    #answer {
+      margin-top: 20px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
+      min-height: 120px;
+      max-height: 320px;
+      overflow-y: auto;
+      text-align: left;
+      font-size: 14px;
     }
 
-    #footer {
-      text-align: center;
-      opacity: 0.60;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      line-height: 1.2;
-      margin-top: 2px;
-    }
-
-    #footer .brand { font-size: 0.82rem; }
-    #footer .phone { font-size: 0.78rem; opacity: 0.9; margin-top: 4px; }
-
-    body.starting #orb-container { pointer-events: none; opacity: 0.95; }
+    .line { margin: 8px 0; }
+    .me { color: #2563eb; font-weight: 600; }
+    .ai { color: #065f46; font-weight: 600; }
+    .text { color: #111; }
+    .muted { color: #777; font-style: italic; }
   </style>
 </head>
-
-<body class="idle">
-  <div id="overlay">
-    <div id="panel">
-      <div id="headline">Press to start a conversation with our AI team member</div>
-
-      <div id="orb-container" onclick="toggleAssistant()">
-        <div class="orb"></div>
-      </div>
-
-      <div id="status-text"></div>
-      <div id="hint">Click outside this box to return to the website</div>
-
-      <div id="footer">
-        <div class="brand">A1 Professional Asphalt &amp; Concrete</div>
-        <div class="phone">(618) 929-3301</div>
-      </div>
-    </div>
+<body>
+  <div class="app">
+    <p class="demo-label">Demo</p>
+    <h1>Talk to A1 Professional Asphalt</h1>
+    <button id="pttBtn" aria-pressed="false" aria-label="Push to talk"></button>
+    <div id="answer"><div class="muted">Conversation will appear here.</div></div>
+    <audio id="remote" autoplay playsinline></audio>
   </div>
 
   <script>
-    let pc = null
-    let localStream = null
-    let starting = false
+    const pttBtn = document.getElementById("pttBtn");
+    const answerEl = document.getElementById("answer");
+    const rtAudio = document.getElementById("remote");
 
-    const statusEl = document.getElementById('status-text')
-    const headlineEl = document.getElementById('headline')
-    const hintEl = document.getElementById('hint')
+    let pc = null;
+    let dc = null;
+    let micStream = null;
+    let micTrack = null;
+    let talking = false;
+    let aiTranscriptBuffer = "";
+    let connected = false;
 
-    function setIdle(){
-      document.body.className = 'idle'
-      statusEl.textContent = ''
-      headlineEl.classList.remove('hide-soft')
-      hintEl.textContent = 'Click outside this box to return to the website'
-      starting = false
+    function appendLine(role, text) {
+      if (answerEl.querySelector(".muted")) answerEl.innerHTML = "";
+
+      const div = document.createElement("div");
+      div.className = "line";
+
+      const label = role === "me" ? "You:" : "AI:";
+      const cls = role === "me" ? "me" : "ai";
+
+      div.innerHTML = `<span class="${cls}">${label}</span> <span class="text"></span>`;
+      div.querySelector(".text").textContent = text;
+
+      answerEl.appendChild(div);
+      answerEl.scrollTop = answerEl.scrollHeight;
     }
 
-    function setStarting(){
-      document.body.className = 'starting'
-      statusEl.textContent = 'STARTING…'
-      headlineEl.classList.remove('hide-soft')
-      hintEl.textContent = 'Click outside this box to return to the website'
+    function setListening(on) {
+      pttBtn.classList.toggle("listening", on);
+      pttBtn.setAttribute("aria-pressed", on ? "true" : "false");
     }
 
-    function setActive(){
-      document.body.className = 'active'
-      statusEl.textContent = 'LISTENING…'
-      // Hide headline without shifting layout
-      headlineEl.classList.add('hide-soft')
-      hintEl.textContent = 'Click orb to pause'
+    function setSpeaking(on) {
+      pttBtn.classList.toggle("speaking", on);
     }
 
-    async function hardStop(){
-      try{
-        if (pc) { try { pc.close() } catch {} pc = null }
-        if (localStream) {
-          try { localStream.getTracks().forEach(t => t.stop()) } catch {}
-          localStream = null
-        }
-      } finally {
-        setIdle()
-      }
-    }
-
-    document.getElementById('overlay').addEventListener('click', async (e) => {
-      if (e.target.id !== 'overlay') return
-      await hardStop()
-      try { window.parent.postMessage({ type: 'voxtalk-close' }, '*') } catch {}
-      try { window.close() } catch {}
-      try { history.back() } catch {}
-    })
-
-    async function toggleAssistant(){
-      // Stop / pause if running OR starting
-      if (pc || starting) {
-        await hardStop()
-        return
-      }
-
-      starting = true
-      setStarting()
-
+    async function initRealtime() {
       try {
-        const r = await fetch('/session')
-        const data = await r.json()
-
-        pc = new RTCPeerConnection()
-
-        const audio = document.createElement('audio')
-        audio.autoplay = true
-
-        pc.ontrack = (e) => {
-          if (audio.srcObject !== e.streams[0]) {
-            audio.srcObject = e.streams[0]
-          }
+        const sessionRes = await fetch("/session", { method: "POST" });
+        if (!sessionRes.ok) {
+          throw new Error(`Session failed: ${sessionRes.status} ${await sessionRes.text()}`);
         }
 
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        pc.addTrack(localStream.getTracks()[0])
+        const sessionData = await sessionRes.json();
+        const clientSecret = sessionData.client_secret?.value;
 
-        const offer = await pc.createOffer()
-        await pc.setLocalDescription(offer)
+        if (!clientSecret) {
+          throw new Error("No client secret returned from /session");
+        }
 
-        const sdpResponse = await fetch(
-          "https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
-          {
-            method: "POST",
-            body: offer.sdp,
-            headers: {
-              Authorization: `Bearer ${data.client_secret.value}`,
-              "Content-Type": "application/sdp"
+        pc = new RTCPeerConnection();
+
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micTrack = micStream.getTracks()[0];
+        micTrack.enabled = false;
+
+        pc.addTrack(micTrack, micStream);
+
+        pc.ontrack = (event) => {
+          rtAudio.srcObject = event.streams[0];
+          rtAudio.play().catch(() => {});
+        };
+
+        dc = pc.createDataChannel("oai-events");
+
+        dc.onopen = () => {
+          connected = true;
+          console.log("Data channel open");
+
+          // Ask for the exact greeting once, after the channel is ready.
+          dc.send(JSON.stringify({
+            type: "response.create",
+            response: {
+              modalities: ["audio", "text"],
+              instructions: "Say exactly: Hello, welcome to A1 Professional Asphalt and Concrete. I'm an AI team member here to answer all your questions. What can I do for you?"
             }
+          }));
+        };
+
+        dc.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            console.log("Realtime event:", msg);
+
+            // User transcript completed
+            if (
+              msg.type === "conversation.item.input_audio_transcription.completed" &&
+              msg.transcript
+            ) {
+              appendLine("me", msg.transcript.trim());
+            }
+
+            // AI transcript chunks
+            if (msg.type === "response.audio_transcript.delta" && msg.delta) {
+              aiTranscriptBuffer += msg.delta;
+            }
+
+            // AI transcript final
+            if (msg.type === "response.audio_transcript.done") {
+              const text = aiTranscriptBuffer.trim();
+              if (text) appendLine("ai", text);
+              aiTranscriptBuffer = "";
+            }
+
+            if (msg.type === "error") {
+              console.error("Realtime error:", msg);
+            }
+          } catch (err) {
+            console.error("Data channel parse error:", err);
           }
-        )
+        };
 
-        const answer = { type: "answer", sdp: await sdpResponse.text() }
-        await pc.setRemoteDescription(answer)
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
 
-        setActive()
-      } catch (err) {
-        console.error(err)
-        pc = null
-        if (localStream) {
-          try { localStream.getTracks().forEach(t => t.stop()) } catch {}
-          localStream = null
+        const realtimeRes = await fetch("https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${clientSecret}`,
+            "Content-Type": "application/sdp"
+          },
+          body: offer.sdp
+        });
+
+        if (!realtimeRes.ok) {
+          throw new Error(`Realtime SDP failed: ${realtimeRes.status} ${await realtimeRes.text()}`);
         }
-        document.body.className = 'idle'
-        statusEl.textContent = 'ERROR'
-        starting = false
-        headlineEl.classList.remove('hide-soft')
-        hintEl.textContent = 'Click outside this box to return to the website'
+
+        const answerSdp = await realtimeRes.text();
+        await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+
+        pttBtn.addEventListener("click", () => {
+          if (!connected || !dc || !micTrack) return;
+
+          talking = !talking;
+          micTrack.enabled = talking;
+          setListening(talking);
+
+          if (!talking) {
+            // User stopped talking: commit audio and explicitly request response
+            dc.send(JSON.stringify({ type: "input_audio_buffer.commit" }));
+            dc.send(JSON.stringify({
+              type: "response.create",
+              response: {
+                modalities: ["audio", "text"]
+              }
+            }));
+          }
+        });
+
+        rtAudio.addEventListener("playing", () => setSpeaking(true));
+        rtAudio.addEventListener("ended", () => setSpeaking(false));
+        rtAudio.addEventListener("pause", () => setSpeaking(false));
+
+      } catch (err) {
+        console.error("Realtime init failed:", err);
+        appendLine("ai", `Startup error: ${err.message}`);
       }
     }
 
-    setIdle()
+    initRealtime();
   </script>
 </body>
 </html>
