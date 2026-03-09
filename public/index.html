@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>A1 Brain</title>
+  <title>A1 Asphalt & Sealing</title>
 
   <style>
     :root{
@@ -149,7 +149,7 @@
       <div id="hint">Click outside this box to return to the website</div>
 
       <div id="footer">
-        <div class="brand">A1 Professional Asphalt &amp; Concrete</div>
+        <div class="brand">A1 Asphalt &amp; Sealing</div>
         <div class="phone">(618) 929-3301</div>
       </div>
     </div>
@@ -182,9 +182,8 @@
     function setActive(){
       document.body.className = 'active'
       statusEl.textContent = ''
-      // Hide headline without shifting layout
       headlineEl.classList.add('hide-soft')
-      hintEl.textContent = 'Click orb to pause'
+      hintEl.textContent = 'Click orb to end'
     }
 
     async function hardStop(){
