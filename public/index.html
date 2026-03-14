@@ -137,7 +137,7 @@
     <div id="panel">
       <div id="headline">Press start to have a conversation with Joe Shantz's AI Team Member regarding financial matters concerning the US Bank loan</div>
 
-      <div id="orb-container" onclick="toggleAssistant()">
+      <div id="orb-container">
         <div class="orb"></div>
       </div>
 
@@ -158,6 +158,7 @@
     const statusEl = document.getElementById('status-text')
     const headlineEl = document.getElementById('headline')
     const hintEl = document.getElementById('hint')
+    const orbContainer = document.getElementById('orb-container')
 
     function setIdle(){
       document.body.className = 'idle'
@@ -212,4 +213,51 @@
         audio.autoplay = true
 
         pc.ontrack = (e) => {
-          if (audio
+          if (audio.srcObject !== e.streams[0]) {
+            audio.srcObject = e.streams[0]
+          }
+        }
+
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        pc.addTrack(localStream.getTracks()[0])
+
+        const offer = await pc.createOffer()
+        await pc.setLocalDescription(offer)
+
+        const sdpResponse = await fetch(
+          "https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
+          {
+            method: "POST",
+            body: offer.sdp,
+            headers: {
+              Authorization: `Bearer ${data.client_secret.value}`,
+              "Content-Type": "application/sdp"
+            }
+          }
+        )
+
+        const answer = { type: "answer", sdp: await sdpResponse.text() }
+        await pc.setRemoteDescription(answer)
+
+        setActive()
+      } catch (err) {
+        console.error(err)
+        pc = null
+        if (localStream) {
+          try { localStream.getTracks().forEach(t => t.stop()) } catch {}
+          localStream = null
+        }
+        document.body.className = 'idle'
+        statusEl.textContent = 'ERROR'
+        starting = false
+        headlineEl.classList.remove('hide-soft')
+        hintEl.textContent = 'Click the orb to pause'
+      }
+    }
+
+    orbContainer.addEventListener('click', toggleAssistant)
+
+    setIdle()
+  </script>
+</body>
+</html>
