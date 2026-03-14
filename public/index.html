@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>A1 Asphalt & Sealing</title>
+  <title>A1 Professional Asphalt — US Bank Presentation</title>
 
   <style>
     :root{
@@ -46,28 +46,25 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-
-      /* IMPORTANT: reserve space so nothing shifts */
       gap: 10px;
     }
 
-    /* Reserve space even when "hidden" to prevent layout jump */
     #headline {
       font-size: 0.98rem;
       letter-spacing: 1px;
       text-transform: uppercase;
       text-align: center;
-      line-height: 1.2;
+      line-height: 1.5;
       color: var(--muted);
       padding: 0 6px;
-      min-height: 2.4em; /* reserve 2 lines */
+      min-height: 2.4em;
       display: grid;
       place-items: center;
     }
     .hide-soft { visibility: hidden; }
 
     #orb-container {
-      width: 185px;   /* slightly smaller */
+      width: 185px;
       height: 185px;
       cursor: pointer;
       display: grid;
@@ -108,7 +105,7 @@
       line-height: 1.2;
       color: var(--yellow);
       opacity: 0.90;
-      min-height: 1.2em; /* reserve 1 line always */
+      min-height: 1.2em;
     }
 
     #hint{
@@ -116,7 +113,7 @@
       color: var(--muted2);
       text-align: center;
       line-height: 1.2;
-      min-height: 1.1em; /* reserve 1 line always */
+      min-height: 1.1em;
       margin-top: -2px;
     }
 
@@ -130,7 +127,6 @@
     }
 
     #footer .brand { font-size: 0.82rem; }
-    #footer .phone { font-size: 0.78rem; opacity: 0.9; margin-top: 4px; }
 
     body.starting #orb-container { pointer-events: none; opacity: 0.95; }
   </style>
@@ -139,18 +135,17 @@
 <body class="idle">
   <div id="overlay">
     <div id="panel">
-      <div id="headline">Press to start a conversation with our AI team member</div>
+      <div id="headline">Press start to have a conversation with Joe Shantz's AI Team Member regarding financial matters concerning the US Bank loan</div>
 
       <div id="orb-container" onclick="toggleAssistant()">
         <div class="orb"></div>
       </div>
 
       <div id="status-text"></div>
-      <div id="hint">Click outside this box to return to the website</div>
+      <div id="hint">Click the orb to pause</div>
 
       <div id="footer">
-        <div class="brand">A1 Asphalt &amp; Sealing</div>
-        <div class="phone">(618) 929-3301</div>
+        <div class="brand">A1 Professional Asphalt — Powered by Shantz AI</div>
       </div>
     </div>
   </div>
@@ -168,7 +163,7 @@
       document.body.className = 'idle'
       statusEl.textContent = ''
       headlineEl.classList.remove('hide-soft')
-      hintEl.textContent = 'Click outside this box to return to the website'
+      hintEl.textContent = 'Click the orb to pause'
       starting = false
     }
 
@@ -176,14 +171,14 @@
       document.body.className = 'starting'
       statusEl.textContent = 'STARTING…'
       headlineEl.classList.remove('hide-soft')
-      hintEl.textContent = 'Click outside this box to return to the website'
+      hintEl.textContent = 'Click the orb to pause'
     }
 
     function setActive(){
       document.body.className = 'active'
       statusEl.textContent = ''
       headlineEl.classList.add('hide-soft')
-      hintEl.textContent = 'Click orb to end'
+      hintEl.textContent = 'Click the orb to pause'
     }
 
     async function hardStop(){
@@ -198,16 +193,7 @@
       }
     }
 
-    document.getElementById('overlay').addEventListener('click', async (e) => {
-      if (e.target.id !== 'overlay') return
-      await hardStop()
-      try { window.parent.postMessage({ type: 'voxtalk-close' }, '*') } catch {}
-      try { window.close() } catch {}
-      try { history.back() } catch {}
-    })
-
     async function toggleAssistant(){
-      // Stop / pause if running OR starting
       if (pc || starting) {
         await hardStop()
         return
@@ -226,49 +212,4 @@
         audio.autoplay = true
 
         pc.ontrack = (e) => {
-          if (audio.srcObject !== e.streams[0]) {
-            audio.srcObject = e.streams[0]
-          }
-        }
-
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        pc.addTrack(localStream.getTracks()[0])
-
-        const offer = await pc.createOffer()
-        await pc.setLocalDescription(offer)
-
-        const sdpResponse = await fetch(
-          "https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
-          {
-            method: "POST",
-            body: offer.sdp,
-            headers: {
-              Authorization: `Bearer ${data.client_secret.value}`,
-              "Content-Type": "application/sdp"
-            }
-          }
-        )
-
-        const answer = { type: "answer", sdp: await sdpResponse.text() }
-        await pc.setRemoteDescription(answer)
-
-        setActive()
-      } catch (err) {
-        console.error(err)
-        pc = null
-        if (localStream) {
-          try { localStream.getTracks().forEach(t => t.stop()) } catch {}
-          localStream = null
-        }
-        document.body.className = 'idle'
-        statusEl.textContent = 'ERROR'
-        starting = false
-        headlineEl.classList.remove('hide-soft')
-        hintEl.textContent = 'Click outside this box to return to the website'
-      }
-    }
-
-    setIdle()
-  </script>
-</body>
-</html>
+          if (audio
